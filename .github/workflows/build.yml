@@ -12,7 +12,6 @@ jobs:
     timeout-minutes: 50
 
     env:
-      # ubuntu-latest ships an Android SDK at this path; avoid the flaky setup action.
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
 
@@ -28,21 +27,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Inspect preinstalled Android SDK
-        run: |
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls "$ANDROID_SDK_ROOT" || true
-          ls "$ANDROID_SDK_ROOT/platforms" 2>/dev/null || echo "(no platforms yet)"
-          which sdkmanager || ls "$ANDROID_SDK_ROOT/cmdline-tools" || true
-
-      - name: Install SDK packages (platform 36, build-tools)
+      - name: Install SDK packages
         run: |
           SDKM=$(command -v sdkmanager || echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager")
-          echo "sdkmanager: $SDKM"
           yes | "$SDKM" --licenses > /dev/null 2>&1 || true
           "$SDKM" "platform-tools" "platforms;android-36" "build-tools;36.0.0" > /tmp/sdk.log 2>&1 || {
             tail -30 /tmp/sdk.log; exit 1; }
-          echo "--- installed platforms ---"
           ls "$ANDROID_SDK_ROOT/platforms"
 
       - name: Cache Gradle
@@ -54,16 +44,29 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Lower compileSdk for CI check only
+      - name: Compile against SDK 36
         run: |
-          # The project pins compileSdk 37 (Android 17 preview), which is not in the
-          # public SDK channel yet. Compile against 36 so Kotlin syntax and types are
-          # still verified; the real APK must be built with 37 locally.
-          grep -n "compileSdk" app/build.gradle
+          # compileSdk 37 (Android 17 preview) is not in the public SDK channel yet,
+          # so the APK is assembled against 36. The real target build uses 37.
           sed -i 's/compileSdk 37/compileSdk 36/' app/build.gradle
           grep -n "compileSdk" app/build.gradle
-
-      - name: Compile Kotlin (syntax + types)
-        run: |
           chmod +x gradlew || true
-          ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon --console=plain 2>&1 | tail -80
+
+      - name: Assemble debug APK
+        run: |
+          ./gradlew :app:assembleDebug --no-daemon --console=plain \
+            -x lint -x lintVitalRelease -x test -x testDebugUnitTest 2>&1 | tail -60
+
+      - name: Show APK
+        if: always()
+        run: |
+          find app/build/outputs -name '*.apk' -printf '%p  %s bytes\n' 2>/dev/null || echo "(no apk)"
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonify-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 7
