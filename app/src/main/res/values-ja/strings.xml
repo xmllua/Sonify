@@ -690,4 +690,12 @@
     <string name="widget_cd_album_art">アルバムアートワーク</string>
     <string name="widget_no_track_title">Sonify</string>
     <string name="widget_no_track_artist">タップして Sonify を開く</string>
+    <string name="page_ximalaya_title">Ximalaya</string>
+    <string name="page_ximalaya_sub">無料のオーディオブックと番組</string>
+    <string name="page_ximalaya_hint">オーディオブック / 番組を検索</string>
+    <string name="page_ximalaya_search">検索</string>
+    <string name="page_ximalaya_loading">読み込み中…</string>
+    <string name="page_ximalaya_featured">おすすめ</string>
+    <string name="page_ximalaya_results">「%1$s」の結果</string>
+    <string name="home_ximalaya_title">Ximalaya のおすすめ</string>
 </resources>

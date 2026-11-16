@@ -27,7 +27,17 @@ enum class HomeSectionId(val key: String) {
     RecommendPlaylists("recommend_playlists"),
     NewSongs("new_songs"),
     NewAlbums("new_albums"),
-    Rank("rank");
+    Rank("rank"),
+
+    /**
+     * 喜马拉雅精选（独立音源）。
+     *
+     * 放在末尾而不是靠前：它是"另一个平台的内容"，与酷狗的推荐/新歌/榜单
+     * 不在同一个信息层级上。用户想听有声书时会主动往下滑，而不是每次开首页
+     * 都被外站内容占掉首屏。老用户已存布局由 [HomeLayoutLogic.normalize]
+     * 的"补齐缺失"步骤自动追加，无需迁移。
+     */
+    Ximalaya("ximalaya");
 
     companion object {
         fun fromKey(key: String): HomeSectionId? = entries.firstOrNull { it.key == key }

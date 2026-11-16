@@ -653,6 +653,11 @@ fun Discovery(
                 }
             }
         }
+                            HomeSectionId.Ximalaya -> item("XimalayaSection") {
+            // refreshKey 接 discoveryRevision：下拉刷新时板块一起重拉，与其它板块同节奏
+            XimalayaHomeSection(navController, refreshKey = discoveryRevision)
+        }
+                            // fromKey 返回可空：布局里可能有已被删除的旧 id，忽略即可
                             else -> Unit
                         }
                     }

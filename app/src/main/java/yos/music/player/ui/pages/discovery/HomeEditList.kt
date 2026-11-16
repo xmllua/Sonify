@@ -145,6 +145,7 @@ internal fun homeSectionTitle(id: HomeSectionId): String = stringResource(
         HomeSectionId.NewSongs -> R.string.discovery_new_songs_title
         HomeSectionId.NewAlbums -> R.string.discovery_new_albums_title
         HomeSectionId.Rank -> R.string.discovery_rank_title
+        HomeSectionId.Ximalaya -> R.string.home_ximalaya_title
     }
 )
 

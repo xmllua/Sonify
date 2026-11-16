@@ -815,4 +815,12 @@
     <string name="settings_performance_lyric_font_size_reset_confirm_message">Are you sure you want to reset both portrait and landscape lyric font sizes to 100%?</string>
     <string name="settings_performance_lyric_font_size_reset_confirm">Reset</string>
     <string name="settings_performance_lyric_font_size_reset_cancel">Cancel</string>
+    <string name="page_ximalaya_title">Ximalaya</string>
+    <string name="page_ximalaya_sub">Free audio books & podcasts</string>
+    <string name="page_ximalaya_hint">Search audio books / shows</string>
+    <string name="page_ximalaya_search">Search</string>
+    <string name="page_ximalaya_loading">Loading…</string>
+    <string name="page_ximalaya_featured">Featured picks</string>
+    <string name="page_ximalaya_results">Results for “%1$s”</string>
+    <string name="home_ximalaya_title">Ximalaya picks</string>
 </resources>

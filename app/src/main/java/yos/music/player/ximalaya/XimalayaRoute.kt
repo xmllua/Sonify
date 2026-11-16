@@ -1,25 +1,21 @@
 package yos.music.player.ximalaya
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
+import yos.music.player.ui.navigation.popBackStackSafely
 
 /**
- * 喜马拉雅二级页：套上统一的 Scaffold，内容交给 [XimalayaPage]。
+ * 喜马拉雅页的路由入口。
  *
- * 单独包一层是为了让导航图只依赖这个稳定入口；页面内部怎么改都不影响路由。
- * 播放走 [playXimalaya]，直接进项目的 MediaController，不需要外部回调。
+ * 只做两件事：建一个稳定的 [XimalayaApi] 实例、把返回接到导航栈。
+ * 页面本体不碰 NavController，这样它可以被首页板块直接嵌入而不带导航副作用。
  */
 @Composable
-fun XimalayaRoute(modifier: Modifier = Modifier) {
+fun XimalayaRoute(navController: NavController) {
     val api = remember { XimalayaApi() }
-    Scaffold(modifier = modifier.fillMaxSize()) { padding ->
-        XimalayaPage(
-            api = api,
-            modifier = Modifier.padding(padding),
-        )
-    }
+    XimalayaPage(
+        api = api,
+        onBack = { navController.popBackStackSafely() },
+    )
 }

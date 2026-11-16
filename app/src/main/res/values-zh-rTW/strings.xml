@@ -713,4 +713,12 @@
     <string name="settings_performance_lyric_font_size_reset_confirm_message">確定要將豎屏與橫屏的歌詞字體大小恢復為預設 100% 嗎？</string>
     <string name="settings_performance_lyric_font_size_reset_confirm">確定重設</string>
     <string name="settings_performance_lyric_font_size_reset_cancel">取消</string>
+    <string name="page_ximalaya_title">喜馬拉雅</string>
+    <string name="page_ximalaya_sub">免費有聲書與節目</string>
+    <string name="page_ximalaya_hint">搜尋有聲書 / 節目</string>
+    <string name="page_ximalaya_search">搜尋</string>
+    <string name="page_ximalaya_loading">載入中…</string>
+    <string name="page_ximalaya_featured">精選推薦</string>
+    <string name="page_ximalaya_results">「%1$s」的結果</string>
+    <string name="home_ximalaya_title">喜馬拉雅精選</string>
 </resources>

@@ -40,6 +40,8 @@ import yos.music.player.data.repositories.PlaybackRequestPurpose
 import yos.music.player.data.repositories.KugouVerificationRequiredException
 import yos.music.player.data.repositories.KugouSignatureRejectedException
 import yos.music.player.data.repositories.KugouTokenRejectedException
+import yos.music.player.ximalaya.XmUris
+import yos.music.player.ximalaya.XimalayaUrlResolver
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -99,6 +101,12 @@ class KugouResolvingDataSource(
     private var activeBytesRead: Long = 0L
     override fun open(dataSpec: DataSpec): Long {
         val openedAt = SystemClock.elapsedRealtime()
+        // 喜马拉雅：占位符 ximalaya://track/<id>，在这里惰性解析成 https 直链。
+        // 必须走自己的分支而不是复用下面的酷狗路径——那条路径按 hash 查音质档、
+        // 写音质事实表、查酷狗缓存 key，喜马拉雅的 trackId 走进去只会得到"查不到"。
+        if (dataSpec.uri.scheme == XmUris.SCHEME) {
+            return openXimalaya(dataSpec, openedAt)
+        }
         if (dataSpec.uri.scheme != KugouRepository.PLACEHOLDER_SCHEME) {
             // 本地文件与其它直链：不解析、不进缓存（不把本地文件再抄一份进缓存）
             selectChannel(online = false, preferDirect = false, cacheOnly = false)
@@ -128,6 +136,60 @@ class KugouResolvingDataSource(
         // 未整首缓存但有升级结论：按**升级后的档位**请求，剩余字节续写进同一份缓存，
         // 比整首重下 128K 更省（key 由实际档位决定，见 openResolved 里的 cacheKey）
         return openResolved(dataSpec, hash, decision, upgrade?.tier ?: decision.tier, openedAt)
+    }
+
+    /**
+     * 喜马拉雅：解析 `ximalaya://track/<id>` → https 直链，再交给在线通道读取。
+     *
+     * 与酷狗路径的三处刻意差异（都是必须的，不是简化）：
+     * 1. **不查音质意图**。喜马拉雅的档位由服务端在详情里给（`playUrl32/64/...`），
+     *    本机那套 `QualityIntentResolver` 对它是空语义；强行套用只会解析出
+     *    一个"适用于酷狗的档位名"，然后拿它去问喜马拉雅，白跑一次。
+     * 2. **不写音质事实表**。`KugouRepository.recordObservedTier` 等表以酷狗 hash 为主键，
+     *    塞入 trackId 会污染"这首歌我听过什么档"的判断。
+     * 3. **缓存 key 用 own 前缀**。`OnlineAudioCache.keyOf` 产出的 key 是
+     *    `kugou:<hash>:<tier>`，直接复用会让喜马拉雅字节混进酷狗缓存索引
+     *    （设置页「按歌曲清理缓存」会按 hash 误删别人的缓存）。
+     *
+     * 失败一律转成 IOException：Loader 的重试/跳歌策略只认这个类型。
+     */
+    private fun openXimalaya(dataSpec: DataSpec, openedAt: Long): Long {
+        val trackId = dataSpec.uri.lastPathSegment?.toLongOrNull()
+            ?: throw IOException("喜马拉雅占位符缺少 trackId: ${dataSpec.uri}")
+        YosDiagnostics.log("XM_OPEN", "id" to trackId, "pos" to dataSpec.position)
+        val realUrl = try {
+            XimalayaUrlResolver.resolveBlocking(trackId)
+        } catch (e: IOException) {
+            YosDiagnostics.log("XM_OPEN_FAIL", "id" to trackId, "why" to e.toString())
+            throw e
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // 切歌取消不是失败：包成 IOException 交回 ExoPlayer，会被其吞掉
+            throw IOException("喜马拉雅解析被取消 id=$trackId", e)
+        } catch (e: Exception) {
+            throw IOException("喜马拉雅直链解析失败 id=$trackId", e)
+        }
+        // 解析结果必须是 https：明文会被 network_security_config 拦死（无声的根因）
+        val safeUrl = if (realUrl.startsWith("http://")) {
+            "https://" + realUrl.removePrefix("http://")
+        } else realUrl
+        val spec = dataSpec.buildUpon()
+            .setUri(safeUrl)
+            // 缓存 key 与签名 URL 解耦：sign/buy_key 每轮都变，拿 URL 当 key 永不命中
+            .setKey("ximalaya:$trackId")
+            .build()
+        val preferDirect = OnlineProxyHealth.isBypassed()
+        selectChannel(online = true, preferDirect = preferDirect, cacheOnly = false)
+        try {
+            return openedStep(spec, null, openedAt)
+        } catch (e: IOException) {
+            logOpenFail(spec, null, openedAt, e)
+            val canFallback = !preferDirect && OnlineProxyHealth.usesSystemProxy(spec.uri)
+            if (!canFallback) throw e
+            OnlineProxyHealth.markProxyFailed()
+            runCatching { active.close() }
+            selectChannel(online = true, preferDirect = true, cacheOnly = false)
+            return openedStep(spec, null, openedAt)
+        }
     }
 
     /** 联网解析 + 真实 open（含代理失败回退直连）。 */

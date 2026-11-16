@@ -814,4 +814,12 @@
     <string name="settings_performance_lyric_font_size_reset_confirm">确定重置</string>
     <string name="settings_performance_lyric_font_size_reset_cancel">取消</string>
     <string name="settings_performance_lyric_font_size_reset_done">字体大小已重置为 100%</string>
+    <string name="page_ximalaya_title">喜马拉雅</string>
+    <string name="page_ximalaya_sub">免费有声书与节目</string>
+    <string name="page_ximalaya_hint">搜索有声书 / 节目</string>
+    <string name="page_ximalaya_search">搜索</string>
+    <string name="page_ximalaya_loading">加载中…</string>
+    <string name="page_ximalaya_featured">精选推荐</string>
+    <string name="page_ximalaya_results">“%1$s”的结果</string>
+    <string name="home_ximalaya_title">喜马拉雅精选</string>
 </resources>

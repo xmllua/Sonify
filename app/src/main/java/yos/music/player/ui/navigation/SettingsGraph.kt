@@ -38,7 +38,7 @@ fun NavGraphBuilder.settingsGraph(
     composable(UI.Settings.OnlineQualitySetting) { OnlineQualitySettings(navController) }
     composable(UI.Settings.About) { About(navController) }
     // 喜马拉雅：独立音源页，点进去搜有声书/节目，免费内容可直接播放
-    composable(UI.Settings.Ximalaya) { XimalayaRoute() }
+    composable(UI.Settings.Ximalaya) { XimalayaRoute(navController) }
     composable(UI.Settings.Acknowledgements) { Acknowledgements(navController) }
     composable(UI.Settings.MediaCodec) { MediaCodec(navController) }
     composable(UI.Settings.LyricSetting) { LyricSetting(navController) }
