@@ -29,11 +29,26 @@ jobs:
 
       - name: Install SDK packages
         run: |
+          set -e
           SDKM=$(command -v sdkmanager || echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager")
           yes | "$SDKM" --licenses > /dev/null 2>&1 || true
           "$SDKM" "platform-tools" "platforms;android-36" "build-tools;36.0.0" > /tmp/sdk.log 2>&1 || {
-            tail -30 /tmp/sdk.log; exit 1; }
+            tail -40 /tmp/sdk.log; exit 1; }
           ls "$ANDROID_SDK_ROOT/platforms"
+
+      - name: Force compileSdk 36 and targetSdk 36
+        run: |
+          set -e
+          echo "--- before ---"
+          grep -nE "compileSdk|targetSdk|minSdk" app/build.gradle || true
+          # compileSdk 37 = Android 17 preview, absent from the public SDK channel.
+          # Rewrite every SDK pin so the APK can actually be assembled here.
+          sed -i -E 's/compileSdk[[:space:]]+37/compileSdk 36/g' app/build.gradle
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' app/build.gradle
+          sed -i -E 's/targetSdk[[:space:]]+3[0-9]/targetSdk 36/g' app/build.gradle
+          echo "--- after ---"
+          grep -nE "compileSdk|targetSdk|minSdk" app/build.gradle || true
+          grep -n "compileSdk" app/build.gradle | grep -q 36 || { echo "compileSdk rewrite failed"; exit 1; }
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -44,29 +59,40 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Compile against SDK 36
-        run: |
-          # compileSdk 37 (Android 17 preview) is not in the public SDK channel yet,
-          # so the APK is assembled against 36. The real target build uses 37.
-          sed -i 's/compileSdk 37/compileSdk 36/' app/build.gradle
-          grep -n "compileSdk" app/build.gradle
-          chmod +x gradlew || true
-
       - name: Assemble debug APK
         run: |
+          set -o pipefail
+          chmod +x gradlew || true
           ./gradlew :app:assembleDebug --no-daemon --console=plain \
-            -x lint -x lintVitalRelease -x test -x testDebugUnitTest 2>&1 | tail -60
+            -x lint -x lintVitalRelease -x test -x testDebugUnitTest
+          echo "=== exit=$? ==="
 
-      - name: Show APK
+      - name: Locate APK
+        id: locate
         if: always()
         run: |
-          find app/build/outputs -name '*.apk' -printf '%p  %s bytes\n' 2>/dev/null || echo "(no apk)"
+          echo "--- outputs tree ---"
+          find app/build/outputs -type f -name '*.apk' -printf '%p  %s bytes\n' 2>/dev/null || true
+          APK=$(find app/build/outputs -type f -name '*.apk' 2>/dev/null | head -1)
+          if [ -n "$APK" ]; then
+            echo "found=$APK" >> "$GITHUB_OUTPUT"
+            ls -lh "$APK"
+          else
+            echo "found=" >> "$GITHUB_OUTPUT"
+            echo "NO APK PRODUCED"
+          fi
 
       - name: Upload APK
-        if: always()
+        if: steps.locate.outputs.found != ''
         uses: actions/upload-artifact@v4
         with:
           name: sonify-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
+          path: ${{ steps.locate.outputs.found }}
+          if-no-files-found: error
           retention-days: 7
+
+      - name: Fail if no APK
+        if: steps.locate.outputs.found == ''
+        run: |
+          echo "::error::No APK was produced"
+          exit 1
