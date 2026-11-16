@@ -816,7 +816,7 @@
     <string name="settings_performance_lyric_font_size_reset_confirm">Reset</string>
     <string name="settings_performance_lyric_font_size_reset_cancel">Cancel</string>
     <string name="page_ximalaya_title">Ximalaya</string>
-    <string name="page_ximalaya_sub">Free audio books & podcasts</string>
+    <string name="page_ximalaya_sub">Free audio books &amp; podcasts</string>
     <string name="page_ximalaya_hint">Search audio books / shows</string>
     <string name="page_ximalaya_search">Search</string>
     <string name="page_ximalaya_loading">Loading…</string>
