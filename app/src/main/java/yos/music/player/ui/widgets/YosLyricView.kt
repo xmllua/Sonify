@@ -495,8 +495,6 @@ fun YosLyricViewLib(
                     // 库里会给当前焦点行单独退回 SrcOver——扩展亮度已经超过 SDR 白，
                     // 再叠一层加色会把整行推过屏幕上限变成死白。
                     blendMode = if (SettingsLibrary.LyricHdrEffect) BlendMode.Plus else BlendMode.SrcOver,
-                    hdrBrush = hdrBrush,
-                    hdrBoost = hdrBoost,
                     useBlurEffect = blurLambda(),
                     showTranslation = translationLambda(),
                     showPhonetic = false,
