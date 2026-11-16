@@ -71,6 +71,9 @@ fun XimalayaPage(
 
     var hotWords by remember { mutableStateOf<List<String>>(emptyList()) }
     var albums by remember { mutableStateOf<List<XmAlbum>>(emptyList()) }
+    // 搜索原始结果（未过滤）与"只看免费"开关：过滤要能即时切换，不重新请求
+    var searchAll by remember { mutableStateOf<List<XmAlbum>>(emptyList()) }
+    var freeOnly by remember { mutableStateOf(true) }
     var opened by remember { mutableStateOf<XmAlbum?>(null) }
     var tracks by remember { mutableStateOf<List<XmTrack>>(emptyList()) }
     var tracksLoading by remember { mutableStateOf(false) }
@@ -86,13 +89,28 @@ fun XimalayaPage(
             tracks = emptyList()
             try {
                 val page = api.searchAlbums(q, pageSize = 30)
-                albums = page.albums
-                if (albums.isEmpty()) error = "没有找到专辑，换个关键词试试"
+                searchAll = page.albums
+                applyFilter()
             } catch (e: Exception) {
                 error = e.message ?: "搜索失败"
             } finally {
                 searching = false
             }
+        }
+    }
+
+    // 只显示免费：默认开。搜索"郭德纲"这类词会同时返回大量付费专辑，
+    // 全列出来用户点十个有八个不能听；默认过滤掉，需要时再关。
+    fun applyFilter() {
+        albums = if (freeOnly) searchAll.filter { !it.isPaid } else searchAll
+        if (albums.isEmpty()) {
+            error = if (searchAll.isEmpty()) {
+                "没有找到专辑，换个关键词试试"
+            } else {
+                "搜索结果都是付费专辑，可关闭「只看免费」查看"
+            }
+        } else {
+            error = null
         }
     }
 
@@ -128,11 +146,11 @@ fun XimalayaPage(
         }
     }
 
-    // 首次进入拉分类精选与热搜词（都失败也不打断页面）
+    // 首次进入拉分类精选（只含免费）与热搜词（都失败也不打断页面）
     LaunchedEffect(Unit) {
         if (albums.isEmpty()) {
             searching = true
-            runCatching { api.categoryAlbums(1001, 1, 12) }
+            runCatching { api.freeRecommendAlbums(limit = 12) }
                 .onSuccess { albums = it }
                 .onFailure { error = it.message ?: "加载精选失败" }
             searching = false
@@ -176,6 +194,42 @@ fun XimalayaPage(
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
+                        }
+                    }
+                    // 「只看免费」开关：默认开。关掉后把搜索原始结果原样列出（含付费）
+                    if (searchAll.isNotEmpty() || keyword.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(id = R.string.page_ximalaya_free_only),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = if (freeOnly) "开" else "关",
+                                fontSize = 12.sp,
+                                color = if (freeOnly) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        freeOnly = !freeOnly
+                                        applyFilter()
+                                    }
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 3.dp),
+                            )
+                            Spacer(Modifier.weight(1f))
+                            if (searchAll.isNotEmpty()) {
+                                Text(
+                                    text = "${albums.size}/${searchAll.size}",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                     if (hotWords.isNotEmpty() && opened == null && albums.isNotEmpty()) {

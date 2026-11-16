@@ -698,4 +698,5 @@
     <string name="page_ximalaya_featured">おすすめ</string>
     <string name="page_ximalaya_results">「%1$s」の結果</string>
     <string name="home_ximalaya_title">Ximalaya のおすすめ</string>
+    <string name="page_ximalaya_free_only">無料のみ</string>
 </resources>

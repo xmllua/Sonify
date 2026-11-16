@@ -822,4 +822,5 @@
     <string name="page_ximalaya_featured">精选推荐</string>
     <string name="page_ximalaya_results">“%1$s”的结果</string>
     <string name="home_ximalaya_title">喜马拉雅精选</string>
+    <string name="page_ximalaya_free_only">只看免费</string>
 </resources>

@@ -721,4 +721,5 @@
     <string name="page_ximalaya_featured">精選推薦</string>
     <string name="page_ximalaya_results">「%1$s」的結果</string>
     <string name="home_ximalaya_title">喜馬拉雅精選</string>
+    <string name="page_ximalaya_free_only">只看免費</string>
 </resources>

@@ -70,7 +70,9 @@ internal fun XimalayaHomeSection(
         failed = false
         runCatching {
             val api = XimalayaApi()
-            api.categoryAlbums(categoryId = 1001, page = 1, rows = 10)
+            // 只拿**非付费**专辑：首页推荐位不该放一堆点不开的东西。
+            // 之前固定拉 1001（有声书，付费率 94%）是"首页全是付费"的直接原因。
+            api.freeRecommendAlbums(limit = 12)
         }.onSuccess { albums = it }
             .onFailure { failed = true }
     }

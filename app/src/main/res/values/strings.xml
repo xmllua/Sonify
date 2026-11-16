@@ -823,4 +823,5 @@
     <string name="page_ximalaya_featured">Featured picks</string>
     <string name="page_ximalaya_results">Results for “%1$s”</string>
     <string name="home_ximalaya_title">Ximalaya picks</string>
+    <string name="page_ximalaya_free_only">Free only</string>
 </resources>

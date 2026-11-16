@@ -325,7 +325,56 @@ val rawFree = root.optBoolean("isFree", true)
 
     // ---------------------------------------------------------------- 分类/热词
 
-    /** 分类精选（首页板块用）。categoryId=1001 有声书 / 1002 相声评书 / 1005 头条资讯。 */
+    /**
+     * 分类精选的**免费**专辑（首页板块用）。
+     *
+     * ## 为什么必须按分类多拉再过滤（2026-11 实测）
+     * 各分类的付费率差得极悬殊，随便挑一类就等于"首页全是付费"：
+     *
+     * | categoryId | 内容   | 免费率        |
+     * |------------|--------|---------------|
+     * | 1001       | 有声书 | **6%** (3/50) |
+     * | 1002       | 相声   | 32% (16/50)   |
+     * | 1005       | 资讯   | 96% (48/50)   |
+     * | 1006       | 生活   | 80% (40/50)   |
+     *
+     * 上一版固定用 1001，于是首页 47/50 是付费专辑——用户看到的正是
+     * "全都是付费音源"。这里改成：并发拉几个**免费率高的**分类，
+     * 丢掉付费专辑后再合并，保证首屏基本都能直接点开听。
+     *
+     * 付费专辑不作为播放项，但也不隐藏（搜索/分类页仍会展示并标注"付费"），
+     * 这个方法的用途只是"首页推荐位只放能听的"。
+     */
+    suspend fun freeRecommendAlbums(limit: Int = 12): List<XmAlbum> = withContext(Dispatchers.IO) {
+        // 顺序即优先级：资讯/生活免费率最高，相声次之，有声书兜底补量。
+        val buckets = listOf(1005, 1006, 1002, 1003, 1009, 1001)
+        val seen = HashSet<Long>()
+
+        // 先把每个分类能用的免费专辑各拿到手（每类最多一批），再**轮流取**。
+        // 直接"按分类顺序填满 limit"会让首页 12 张全是同一个品类（实测 12/12 是资讯），
+        // 看起来比没推荐流还糟——推荐位的价值就在于品类杂。
+        val pools = buckets.map { cid ->
+            runCatching { categoryAlbums(cid, page = 1, rows = 30) }
+                .getOrNull().orEmpty()
+                // 这层过滤在这里做，pool 内部保持顺序（热门优先）
+                .filter { !it.isPaid }
+                .filter { seen.add(it.albumId) }
+        }
+
+        val out = ArrayList<XmAlbum>(limit)
+        var round = 0
+        // 轮转直到拿满 limit 或所有 pool 都取空
+        while (out.size < limit && pools.any { it.size > round }) {
+            for (pool in pools) {
+                if (out.size >= limit) break
+                pool.getOrNull(round)?.let { out += it }
+            }
+            round++
+        }
+        out
+    }
+
+    /** 全部分类（设置/调试用，也供 UI 做分类切换）。 */
     suspend fun categoryAlbums(
         categoryId: Int = 1001,
         page: Int = 1,
