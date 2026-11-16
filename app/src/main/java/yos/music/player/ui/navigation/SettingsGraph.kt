@@ -15,6 +15,7 @@ import yos.music.player.ui.pages.settings.audio.onlineQuality.OnlineQualitySetti
 import yos.music.player.ui.pages.settings.extend.statusBarLyric.LyricGetter
 import yos.music.player.ui.pages.settings.library.LibraryOverview
 import yos.music.player.ui.pages.settings.others.About
+import yos.music.player.ximalaya.XimalayaRoute
 import yos.music.player.ui.pages.settings.others.Acknowledgements
 import yos.music.player.ui.pages.settings.performance.LyricSetting
 import yos.music.player.ui.pages.settings.performance.NotificationSetting
@@ -36,6 +37,8 @@ fun NavGraphBuilder.settingsGraph(
     composable(UI.Settings.ExoplayerSetting) { ExoPlayerSettings(navController) }
     composable(UI.Settings.OnlineQualitySetting) { OnlineQualitySettings(navController) }
     composable(UI.Settings.About) { About(navController) }
+    // 喜马拉雅：独立音源页，点进去搜有声书/节目，免费内容可直接播放
+    composable(UI.Settings.Ximalaya) { XimalayaRoute() }
     composable(UI.Settings.Acknowledgements) { Acknowledgements(navController) }
     composable(UI.Settings.MediaCodec) { MediaCodec(navController) }
     composable(UI.Settings.LyricSetting) { LyricSetting(navController) }

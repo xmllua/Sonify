@@ -48,7 +48,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun XimalayaPage(
     api: XimalayaApi,
-    onPlay: (url: String, title: String, cover: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -58,6 +57,7 @@ fun XimalayaPage(
     var albums by remember { mutableStateOf<List<XmAlbum>>(emptyList()) }
     var opened by remember { mutableStateOf<XmAlbum?>(null) }
     var tracks by remember { mutableStateOf<List<XmTrack>>(emptyList()) }
+    var toast by remember { mutableStateOf<String?>(null) }
 
     fun doSearch() {
         val kw = keyword.trim()
@@ -108,7 +108,7 @@ fun XimalayaPage(
                 if (url.isNullOrEmpty()) {
                     error = "没有可用的免费音质"
                 } else {
-                    onPlay(url, info.title.ifEmpty { t.title }, info.cover)
+                    toast = playXimalaya(info, url)
                 }
             } catch (e: Exception) {
                 error = e.message ?: "获取播放地址失败"
@@ -161,6 +161,15 @@ fun XimalayaPage(
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+
+        toast?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )

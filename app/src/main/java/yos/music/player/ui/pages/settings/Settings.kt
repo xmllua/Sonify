@@ -244,6 +244,11 @@ fun Settings(navController: NavController) =
                             ) {
                                 navController.toUI(UI.Settings.About)
                             }
+                            Divider()
+                            // 喜马拉雅免费音源入口：独立搜索/播放页，不影响酷狗流程
+                            LabelItem(title = "喜马拉雅（免费音源）") {
+                                navController.toUI(UI.Settings.Ximalaya)
+                            }
                         }
 
                         GroupSpacer()

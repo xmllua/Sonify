@@ -224,6 +224,8 @@ interface UI {
             const val ExoplayerSetting = "ExoplayerSetting"
             const val OnlineQualitySetting = "OnlineQualitySetting"
             const val About = "About"
+            // 喜马拉雅音源（独立页面，只取免费内容）
+            const val Ximalaya = "Ximalaya"
             const val Acknowledgements = "Acknowledgements"
             const val MediaCodec = "MediaCodec"
 
